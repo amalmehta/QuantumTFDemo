@@ -13,7 +13,7 @@ arXiv sets no page limit and has no template. This uses `article` at 10 pt with 
 
 ## Open TODOs (need you)
 
-1. Author name(s) and affiliation (`main.tex`).
+1. ~~Author name(s) and affiliation~~: Amal Mehta, independent (done).
 2. The AI-use statement: say what you reviewed and edited before release (`sections/statements.tex`).
 
 ## Things only a human can judge

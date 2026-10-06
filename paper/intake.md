@@ -21,7 +21,7 @@ status column is filled in from the results.
 
 ## Facts I still need from you
 
-- Author name(s) and affiliation for the title block (currently "\TODO{author}").
+- Author: Amal Mehta, independent (added 2026-10-06).
 - Whether to keep the framing "reproducible demo / tutorial study" (recommended, since nothing here
   is novel) or position it differently.
 
