@@ -1,0 +1,16 @@
+2026-10-06 09:18:47.041884: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1791278327.150995       6 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1791278327.188459       6 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-10-06 09:19:16.053722: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+[mnist_qnn] preset=full
+  seed 0 qnn       acc 0.898  (1020s)
+  seed 0 hybrid    acc 0.907  (888s)
+  seed 0 classical acc 0.909  (5s)
+  seed 1 qnn       acc 0.864  (303s)
+  seed 1 hybrid    acc 0.898  (467s)
+  seed 1 classical acc 0.903  (3s)
+  seed 2 qnn       acc 0.841  (305s)
+  seed 2 hybrid    acc 0.913  (554s)
+  seed 2 classical acc 0.916  (8s)
+[mnist_qnn] done in 29175s -> /work/results/mnist_qnn.json

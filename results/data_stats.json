@@ -1,0 +1,36 @@
+{
+  "experiment": "data_stats",
+  "versions": {
+    "tensorflow": "2.18.1",
+    "tensorflow_quantum": "0.7.6",
+    "cirq": "1.5.0",
+    "keras": "2.18.0"
+  },
+  "config": {
+    "sizes": [
+      3,
+      4
+    ],
+    "preset": "full"
+  },
+  "by_size": [
+    {
+      "size": 3,
+      "n_train": 11922,
+      "n_test": 1968,
+      "unique_train_patterns": 44,
+      "test_patterns_seen": 0.9994918699186992,
+      "lookup_ceiling": 0.8404471544715447,
+      "majority_class": 0.5132113821138211
+    },
+    {
+      "size": 4,
+      "n_train": 11520,
+      "n_test": 1968,
+      "unique_train_patterns": 193,
+      "test_patterns_seen": 0.9939024390243902,
+      "lookup_ceiling": 0.915650406504065,
+      "majority_class": 0.5132113821138211
+    }
+  ]
+}

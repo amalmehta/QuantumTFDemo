@@ -1,0 +1,19 @@
+2026-10-06 08:46:38.438642: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1791276399.277612       8 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1791276399.516557       8 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-10-06 08:47:31.211865: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+[barren_plateaus] preset=full
+  qubits= 2 depth=50: var=8.61e-02
+  qubits= 4 depth=50: var=1.94e-02
+  qubits= 6 depth=50: var=5.96e-03
+  qubits= 8 depth=50: var=3.17e-03
+  qubits=10 depth=50: var=2.49e-03
+  qubits=12 depth=50: var=2.81e-03
+  qubits=8 depth=  1: var=9.86e-02
+  qubits=8 depth=  2: var=8.47e-02
+  qubits=8 depth=  5: var=7.55e-02
+  qubits=8 depth= 10: var=4.92e-02
+  qubits=8 depth= 20: var=1.89e-02
+  qubits=8 depth= 50: var=2.57e-03
+[barren_plateaus] done in 29413s -> /work/results/barren_plateaus.json

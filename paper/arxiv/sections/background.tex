@@ -1,0 +1,26 @@
+\section{Background}
+\label{sec:background}
+
+\paragraph{Quantum neural networks.}
+A parameterised quantum circuit (PQC) applies gates whose angles are trainable, and its output is the
+expectation value of an observable. Trained by gradient descent, PQCs are the near-term analogue of neural
+networks \citep{preskill2018nisq,cerezo2021vqa}. \citet{farhi2018classification} proposed a QNN for binary
+classification in which every data qubit couples to a single readout qubit, and the prediction is
+$\langle Z\rangle$ on that readout. We use their architecture throughout.
+
+\paragraph{Gradients.}
+On hardware, gradients come from the parameter-shift rule, which evaluates the circuit at shifted
+angles \citep{mitarai2018qcl,schuld2019gradients}. In exact classical simulation, the adjoint method gives
+all gradients at roughly the cost of one forward and one backward pass \citep{jones2020adjoint}.
+
+\paragraph{Barren plateaus.}
+For sufficiently random circuits, the variance of the gradient with respect to any parameter decays
+exponentially in the number of qubits \citep{mcclean2018barren}. Hardware noise can induce the same
+effect even in shallow circuits \citep{wang2021noise}.
+
+\paragraph{TensorFlow Quantum.}
+TFQ \citep{broughton2020tfq} represents circuits (built with Cirq) as tensors and exposes simulation,
+expectation values and their gradients as Keras layers on top of TensorFlow \citep{abadi2016tensorflow}.
+The same model code can use exact, noisy or sampled simulation. Its tutorials include a version of the
+Farhi--Neven MNIST task, which we follow for the data pipeline. \citet{huang2021power} discuss when
+classical models can match quantum ones on data like this, which is relevant to our baseline.

@@ -1,0 +1,103 @@
+{
+  "experiment": "barren_plateaus",
+  "versions": {
+    "tensorflow": "2.18.1",
+    "tensorflow_quantum": "0.7.6",
+    "cirq": "1.5.0",
+    "keras": "2.18.0"
+  },
+  "config": {
+    "qubits": [
+      2,
+      4,
+      6,
+      8,
+      10,
+      12
+    ],
+    "depths": [
+      1,
+      2,
+      5,
+      10,
+      20,
+      50
+    ],
+    "fixed_qubits": 8,
+    "fixed_depth": 50,
+    "n_circuits": 200,
+    "seeds": [
+      0
+    ],
+    "preset": "full"
+  },
+  "by_qubits": [
+    {
+      "n_qubits": 2,
+      "depth": 50,
+      "variance": 0.0860848967548673
+    },
+    {
+      "n_qubits": 4,
+      "depth": 50,
+      "variance": 0.019410715925673325
+    },
+    {
+      "n_qubits": 6,
+      "depth": 50,
+      "variance": 0.005957622186575958
+    },
+    {
+      "n_qubits": 8,
+      "depth": 50,
+      "variance": 0.0031695517737180563
+    },
+    {
+      "n_qubits": 10,
+      "depth": 50,
+      "variance": 0.002485760008467453
+    },
+    {
+      "n_qubits": 12,
+      "depth": 50,
+      "variance": 0.0028126484455172616
+    }
+  ],
+  "by_depth": [
+    {
+      "n_qubits": 8,
+      "depth": 1,
+      "variance": 0.09858409509714745
+    },
+    {
+      "n_qubits": 8,
+      "depth": 2,
+      "variance": 0.08470510787360817
+    },
+    {
+      "n_qubits": 8,
+      "depth": 5,
+      "variance": 0.07553803439598764
+    },
+    {
+      "n_qubits": 8,
+      "depth": 10,
+      "variance": 0.04919374068250876
+    },
+    {
+      "n_qubits": 8,
+      "depth": 20,
+      "variance": 0.018908306172764587
+    },
+    {
+      "n_qubits": 8,
+      "depth": 50,
+      "variance": 0.0025715961541447037
+    }
+  ],
+  "fit": {
+    "log_slope": -0.34146941310726847,
+    "log_intercept": -2.4667817404296,
+    "decay_base": 0.7107252061630418
+  }
+}

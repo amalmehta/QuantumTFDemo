@@ -1,0 +1,11 @@
+\section{Limitations}
+\label{sec:limitations}
+
+Everything here is classical simulation of small circuits. The task (two digits at $4\times4$ binary
+pixels) is far from where a quantum advantage could appear, and the input is so coarse that even a
+lookup table over training patterns sets a ceiling well below standard MNIST accuracies. We ran
+\valMnistSeeds{} seeds and lightly tuned two hyperparameters on one seed, so small differences
+between models should not be over-read. The noisy-training study uses smaller $3\times3$ images than the
+rest of the paper, and every noisy expectation carries trajectory-sampling error on top of the channel
+itself. The barren-plateau sweep stops at \valBpMaxQ{} qubits, with \valBpCircuits{} circuits per point.
+None of these results are new. They reproduce known behaviour with current open-source tools.

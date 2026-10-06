@@ -1,0 +1,24 @@
+\section{Introduction}
+\label{sec:intro}
+
+Parameterised quantum circuits trained by gradient descent are the most common model in near-term
+quantum machine learning \citep{preskill2018nisq,cerezo2021vqa}. Software such as TensorFlow Quantum
+(TFQ) \citep{broughton2020tfq} lets anyone train them on a laptop. That makes it easy to run a demo, and
+also easy to misread one: without a matched classical baseline, a sense of what the data allows, or a
+look at gradients and noise, a working QNN says little.
+
+This paper is a compact, reproducible tour of those checks on one task: the Farhi--Neven QNN
+\citep{farhi2018classification} on $4\times4$ MNIST 3-vs-6, the setting of the TFQ tutorial. We contribute:
+\begin{itemize}
+  \item a matched comparison of the QNN, a classical network of similar size, and a hybrid model that
+        adds a classical head to the same circuit, alongside the accuracy ceiling the input allows
+        (\S\ref{sec:res-mnist}, \S\ref{sec:res-hybrid});
+  \item measurements of gradient variance in random circuits as width and depth grow
+        (\S\ref{sec:res-barren});
+  \item the effect of depolarizing noise, both on trained models and during training
+        (\S\ref{sec:res-noise});
+  \item code that regenerates every figure, table and number from raw results with one command,
+        running on current TFQ (\valVerTFQ) in Docker.
+\end{itemize}
+None of these phenomena are new. The point is to reproduce them together, with error bars, in a form
+that is easy to rerun and extend.

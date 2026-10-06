@@ -1,0 +1,37 @@
+2026-10-06 17:25:42.891933: E external/local_xla/xla/stream_executor/cuda/cuda_fft.cc:477] Unable to register cuFFT factory: Attempting to register factory for plugin cuFFT when one has already been registered
+WARNING: All log messages before absl::InitializeLog() is called are written to STDERR
+E0000 00:00:1791307543.082559     695 cuda_dnn.cc:8310] Unable to register cuDNN factory: Attempting to register factory for plugin cuDNN when one has already been registered
+E0000 00:00:1791307543.111738     695 cuda_blas.cc:1418] Unable to register cuBLAS factory: Attempting to register factory for plugin cuBLAS when one has already been registered
+2026-10-06 17:26:40.765266: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
+[noise] preset=full
+  seed 0 p=0.0: eval-only (4x4) 0.897
+  seed 0 p=0.001: eval-only (4x4) 0.889
+  seed 0 p=0.003: eval-only (4x4) 0.879
+  seed 0 p=0.01: eval-only (4x4) 0.786
+  seed 0 p=0.03: eval-only (4x4) 0.511
+  seed 0 p=0.0: trained-noisy (3x3) 0.862  (14s)
+  seed 0 p=0.001: trained-noisy (3x3) 0.857  (348s)
+  seed 0 p=0.003: trained-noisy (3x3) 0.862  (218s)
+  seed 0 p=0.01: trained-noisy (3x3) 0.862  (242s)
+  seed 0 p=0.03: trained-noisy (3x3) 0.786  (216s)
+  seed 1 p=0.0: eval-only (4x4) 0.821
+  seed 1 p=0.001: eval-only (4x4) 0.821
+  seed 1 p=0.003: eval-only (4x4) 0.816
+  seed 1 p=0.01: eval-only (4x4) 0.739
+  seed 1 p=0.03: eval-only (4x4) 0.504
+  seed 1 p=0.0: trained-noisy (3x3) 0.817  (5s)
+  seed 1 p=0.001: trained-noisy (3x3) 0.808  (115s)
+  seed 1 p=0.003: trained-noisy (3x3) 0.808  (112s)
+  seed 1 p=0.01: trained-noisy (3x3) 0.808  (121s)
+  seed 1 p=0.03: trained-noisy (3x3) 0.674  (125s)
+  seed 2 p=0.0: eval-only (4x4) 0.858
+  seed 2 p=0.001: eval-only (4x4) 0.858
+  seed 2 p=0.003: eval-only (4x4) 0.844
+  seed 2 p=0.01: eval-only (4x4) 0.783
+  seed 2 p=0.03: eval-only (4x4) 0.488
+  seed 2 p=0.0: trained-noisy (3x3) 0.906  (6s)
+  seed 2 p=0.001: trained-noisy (3x3) 0.906  (198s)
+  seed 2 p=0.003: trained-noisy (3x3) 0.906  (111s)
+  seed 2 p=0.01: trained-noisy (3x3) 0.906  (100s)
+  seed 2 p=0.03: trained-noisy (3x3) 0.799  (142s)
+[noise] done in 8261s -> /work/results/noise.json

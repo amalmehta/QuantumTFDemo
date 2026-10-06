@@ -1,0 +1,12 @@
+\begin{abstract}
+Quantum neural networks (QNNs) are easy to describe and surprisingly hard to evaluate fairly. We
+present a small, fully reproducible study built on TensorFlow Quantum, aimed at readers who want to see
+the main behaviours of QNN training first-hand. A 17-qubit Farhi--Neven QNN learns to separate 3s from
+6s in $4\times4$ binarised MNIST, reaching \valQnnAcc{} test accuracy over \valMnistSeeds{} seeds. A
+classical network with \valClassicalParams{} weights reaches \valClassicalAcc{}, and adding an 8-unit
+classical head to the same circuit lifts it to \valHybridAcc{}. Both are close to the \valCeilFour{}
+that a lookup table over the training patterns sets as a ceiling for this input. Gradient variance in
+random circuits falls \valBpRatioEight-fold from 2 to 8 qubits. Under depolarizing noise, models
+trained without noise drop to \valNoiseEvMid{} at $p=0.01$ and to chance at $p=\valNoiseMaxP$. Code,
+raw results and the scripts that generate every number in this paper are released.
+\end{abstract}

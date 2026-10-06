@@ -1,0 +1,15 @@
+\section{Conclusion}
+\label{sec:conclusion}
+
+TensorFlow Quantum makes the full loop (encoding classical data as circuits, training a QNN as a Keras
+layer, switching to noisy simulation, and probing gradient statistics) a few hundred lines of Python
+that run on a laptop CPU. On this small task, a classical model of similar size matches or beats the QNN, a
+classical head on the circuit's readouts brings the QNN up to that baseline, gradient variance shrinks as
+random circuits grow, and depolarizing noise quickly erodes a trained model's accuracy. These are the behaviours a newcomer to quantum machine
+learning should expect to see.
+
+\paragraph{Reproducibility.}
+All code, configurations and raw results ship with this paper. One command
+(\texttt{python -m quantumtf\_demo.run\_all -{}-preset full}) reruns every experiment in Docker. Every
+number in the text is generated from the result files by a script, and \texttt{sources.md} records where
+each value comes from.
