@@ -11,4 +11,4 @@
 | ✅ PASS | figures have scripts | all figures have a generating script |
 | ✅ PASS | figures and values match the data | 8 generated files reproduce exactly from the data |
 | ✅ PASS | citations | 13 entries (run with --verify-citations to check them online) |
-| ⚠️ WARN | open TODOs | statements.tex: state what the author(s) reviewed and edited before release. |
+| ✅ PASS | open TODOs | none |
