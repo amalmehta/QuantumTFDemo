@@ -58,7 +58,7 @@ Asked and answered (2026-10-05/06):
 - Experiments: all four (QNN on 4×4 MNIST 3-vs-6 vs classical, barren plateaus, depolarizing noise,
   hybrid quantum-classical head).
 - Paper: arXiv-style LaTeX preprint, ~5 pages, built with Tectonic, every number from results/*.json.
-- Git: local repo only, nothing pushed.
+- Git: local repo at first; pushed to a public GitHub repo, amalmehta/QuantumTFDemo, on 2026-10-10 (no GitHub Pages).
 - Site (requested 2026-10-06): one static project page in site/, also published as a private
   claude.ai page. Experiments rerun after Docker stopped mid-run.
 
@@ -104,3 +104,4 @@ CHANGELOG:
 - 2026-10-06 — added deliverable: project site (site/), requested by the user
 - 2026-10-06 — final full runs done; paper compiled and checked; site republished with full results
 - 2026-10-10 — website expanded to 8 pages in site/public/ (experiments, paper on the web, run guide, about)
+- 2026-10-10 — pushed to GitHub as amalmehta/QuantumTFDemo (public, no Pages)
