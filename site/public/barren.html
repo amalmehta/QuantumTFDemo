@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Barren Plateaus · Quantum TF Demo</title>
+<meta name="description" content="Experiment 3: gradient variance in random circuits as width and depth grow.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+
+</head>
+<body>
+<header class="top"><div class="bar">
+  <a class="name" href="./">Quantum TF Demo</a>
+  <nav aria-label="Site"><a href="mnist.html">QNN vs classical</a><a href="hybrid.html">Hybrid</a><a href="barren.html" aria-current="page">Barren plateaus</a><a href="noise.html">Noise</a><a href="paper.html">Paper</a><a href="run.html">Run it</a><a href="about.html">About</a></nav>
+</div></header>
+<main class="frame">
+
+<header class="page-head">
+  <div class="label">Experiment 3 of 4</div>
+  <h1>Barren plateaus</h1>
+  <p class="q">How fast do gradients vanish as random circuits get wider and deeper?</p>
+  <p class="lede">The gradient variance drops 27-fold from 2 to 8 qubits, then stops falling in this sweep. At 8 qubits it is still dropping at 50 layers, which suggests the wider circuits weren't deep enough to behave fully randomly.</p>
+</header>
+<section class="block">
+  <div class="label">Results</div>
+  <div class="result"><div class="chart" data-chart="barren"></div><div class="numbers" data-numbers="barren"></div></div>
+  <p class="prose">Each point is the variance of ∂⟨Z₀Z₁⟩/∂θ₀ over 200 random circuits with random angles. The dashed line is a log-linear fit over all six widths (decay factor 0.71 per qubit). It describes the trend only loosely, because the points flatten after 8 qubits.</p>
+  <div class="cards" style="grid-template-columns:repeat(auto-fit,minmax(14rem,1fr))">
+    <div class="table-wrap"><table class="data"><thead><tr><th>Qubits (50 layers)</th><th>Variance</th></tr></thead><tbody><tr><td>2</td><td>8.6×10<sup>-2</sup></td></tr><tr><td>4</td><td>1.9×10<sup>-2</sup></td></tr><tr><td>6</td><td>6.0×10<sup>-3</sup></td></tr><tr><td>8</td><td>3.2×10<sup>-3</sup></td></tr><tr><td>10</td><td>2.5×10<sup>-3</sup></td></tr><tr><td>12</td><td>2.8×10<sup>-3</sup></td></tr></tbody></table></div>
+    <div class="table-wrap"><table class="data"><thead><tr><th>Layers (8 qubits)</th><th>Variance</th></tr></thead><tbody><tr><td>1</td><td>9.9×10<sup>-2</sup></td></tr><tr><td>2</td><td>8.5×10<sup>-2</sup></td></tr><tr><td>5</td><td>7.6×10<sup>-2</sup></td></tr><tr><td>10</td><td>4.9×10<sup>-2</sup></td></tr><tr><td>20</td><td>1.9×10<sup>-2</sup></td></tr><tr><td>50</td><td>2.6×10<sup>-3</sup></td></tr></tbody></table></div>
+  </div>
+</section>
+<section class="block"><div class="label">Method</div>
+<ol class="steps">
+<li><div><strong>Random circuit.</strong> R<sub>y</sub>(π/4) on every qubit, then each layer applies a randomly chosen R<sub>x</sub>, R<sub>y</sub> or R<sub>z</sub> to every qubit, followed by a ladder of CZ gates (McClean et al., 2018).</div></li>
+<li><div><strong>Random angles.</strong> Every angle uniform in [0, 2π).</div></li>
+<li><div><strong>Gradient.</strong> d⟨Z₀Z₁⟩/dθ₀ for the first angle, by the adjoint method (exact).</div></li>
+<li><div><strong>Variance.</strong> Over 200 circuits, at 2–12 qubits (at 50 layers) and 1–50 layers (at 8 qubits).</div></li>
+</ol></section>
+<section class="block">
+  <div class="label">The code that ran it</div>
+  <figure class="code"><figcaption>quantumtf_demo/experiments/barren_plateaus.py · random_circuit() · lines 13–25</figcaption><pre><code><span class="ln">13</span><span class="kw">def</span> random_circuit(qubits, depth, rng):
+<span class="ln">14</span>    <span class="str">&quot;&quot;&quot;Initial Ry(pi/4) layer, then `depth` layers of random Pauli rotations + CZ ladder.&quot;&quot;&quot;</span>
+<span class="ln">15</span>    symbols = []
+<span class="ln">16</span>    circuit = cirq.Circuit(cirq.ry(np.pi / 4)(q) <span class="kw">for</span> q <span class="kw">in</span> qubits)
+<span class="ln">17</span>    <span class="kw">for</span> d <span class="kw">in</span> range(depth):
+<span class="ln">18</span>        <span class="kw">for</span> i, q <span class="kw">in</span> enumerate(qubits):
+<span class="ln">19</span>            s = sympy.Symbol(<span class="str">f&quot;t_{d}_{i}&quot;</span>)
+<span class="ln">20</span>            symbols.append(s)
+<span class="ln">21</span>            gate = rng.choice([cirq.rx, cirq.ry, cirq.rz])
+<span class="ln">22</span>            circuit.append(gate(s)(q))
+<span class="ln">23</span>        <span class="kw">for</span> a, b <span class="kw">in</span> zip(qubits, qubits[1:]):
+<span class="ln">24</span>            circuit.append(cirq.CZ(a, b))
+<span class="ln">25</span>    <span class="kw">return</span> circuit, symbols</code></pre></figure>
+  <figure class="code"><figcaption>quantumtf_demo/experiments/barren_plateaus.py · grad_variance() · lines 28–40</figcaption><pre><code><span class="ln">28</span><span class="kw">def</span> grad_variance(n_qubits, depth, n_circuits, seed):
+<span class="ln">29</span>    rng = np.random.default_rng(seed)
+<span class="ln">30</span>    qubits = cirq.GridQubit.rect(1, n_qubits)
+<span class="ln">31</span>    op = cirq.Z(qubits[0]) * cirq.Z(qubits[1])
+<span class="ln">32</span>    expectation = tfq.layers.Expectation(differentiator=tfq.differentiators.Adjoint())
+<span class="ln">33</span>    grads = []
+<span class="ln">34</span>    <span class="kw">for</span> _ <span class="kw">in</span> range(n_circuits):
+<span class="ln">35</span>        circuit, symbols = random_circuit(qubits, depth, rng)
+<span class="ln">36</span>        values = tf.Variable(rng.uniform(0, 2 * np.pi, (1, len(symbols))).astype(<span class="str">&quot;float32&quot;</span>))
+<span class="ln">37</span>        <span class="kw">with</span> tf.GradientTape() <span class="kw">as</span> tape:
+<span class="ln">38</span>            out = expectation(circuit, symbol_names=symbols, symbol_values=values, operators=op)
+<span class="ln">39</span>        grads.append(float(tape.gradient(out, values)[0, 0]))
+<span class="ln">40</span>    <span class="kw">return</span> float(np.var(grads))</code></pre></figure>
+</section>
+<section class="block">
+  <div class="label">Caveats</div>
+  <ul class="caveats">
+    <li>The "too shallow" explanation for the flattening is an interpretation. A deeper sweep at 10–12 qubits would test it; we didn't run one.</li>
+    <li>200 circuits per point. Variance estimates from heavy-tailed gradients are themselves noisy.</li>
+  </ul>
+  <p><a href="paper.html#sec-res-barren">Read §4.3 in the paper</a></p>
+</section>
+<nav class="pager" aria-label="Experiments"><a href="hybrid.html"><span>Previous</span>Hybrid</a><a class="next" href="noise.html"><span>Next</span>Noise</a></nav>
+<footer class="site"><span>Amal Mehta, independent researcher</span><span>TensorFlow 2.18.1 · TensorFlow Quantum 0.7.6 · Cirq 1.5.0</span>
+<span>Built 2026-10-10 from results/*.json</span></footer>
+</main>
+<script src="assets/data.js"></script>
+<script src="assets/site.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Depolarizing Noise · Quantum TF Demo</title>
+<meta name="description" content="Experiment 4: QNN accuracy under depolarizing noise.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+
+</head>
+<body>
+<header class="top"><div class="bar">
+  <a class="name" href="./">Quantum TF Demo</a>
+  <nav aria-label="Site"><a href="mnist.html">QNN vs classical</a><a href="hybrid.html">Hybrid</a><a href="barren.html">Barren plateaus</a><a href="noise.html" aria-current="page">Noise</a><a href="paper.html">Paper</a><a href="run.html">Run it</a><a href="about.html">About</a></nav>
+</div></header>
+<main class="frame">
+
+<header class="page-head">
+  <div class="label">Experiment 4 of 4</div>
+  <h1>Training under depolarizing noise</h1>
+  <p class="q">How much accuracy does hardware-like noise cost a trained model, and can a model still learn with the noise present?</p>
+  <p class="lede">A trained 17-qubit QNN goes from 85.9% to 77.0% at p = 0.01, and to chance (50.1%) at p = 0.03. Smaller 3×3 models trained with the noise present still learn, but that comparison is confounded.</p>
+</header>
+<section class="block">
+  <div class="label">Results</div>
+  <div class="result"><div class="chart" data-chart="noise" data-seeds></div><div class="numbers" data-numbers="noise"></div></div>
+  <p class="prose">Blue: the 3 trained models from Experiment 1, tested under noise. Orange: 3×3 models (10 qubits) trained and tested with the noise present. The orange curve is flatter, but its circuit has 18 noisy couplings instead of 32, so it collects less noise whether or not it's trained with it. Error bars are ±1 standard deviation over seeds.</p>
+  <div class="table-wrap"><table class="data"><thead><tr><th>p</th><th>4×4, trained clean, tested noisy</th><th>3×3, trained and tested noisy</th></tr></thead><tbody><tr><td>0.0</td><td>0.859 ± 0.031</td><td>0.862 ± 0.036</td></tr><tr><td>0.001</td><td>0.856 ± 0.028</td><td>0.857 ± 0.040</td></tr><tr><td>0.003</td><td>0.846 ± 0.026</td><td>0.859 ± 0.040</td></tr><tr><td>0.01</td><td>0.770 ± 0.022</td><td>0.859 ± 0.040</td></tr><tr><td>0.03</td><td>0.501 ± 0.010</td><td>0.753 ± 0.056</td></tr></tbody></table></div>
+</section>
+<section class="block"><div class="label">Method</div>
+<ol class="steps">
+<li><div><strong>Noise channel.</strong> A single-qubit depolarizing channel with probability p after every moment of the model circuit (<code>circuit.with_noise</code>).</div></li>
+<li><div><strong>Trajectories.</strong> Each expectation averages 50 quantum trajectories (<code>tfq.layers.NoisyPQC</code>).</div></li>
+<li><div><strong>Noisy evaluation, 4×4.</strong> The angles saved by Experiment 1, loaded into a noisy model, tested on 500 images per seed.</div></li>
+<li><div><strong>Noisy training, 3×3.</strong> Parameter-shift gradients through noisy trajectories cost about 65 noisy circuits per image, which was too slow at 17 qubits (about 400 s per 64 images per epoch in a test run). So these models use 3×3 images: 200 training and 200 test images, 3 epochs, batch 16, learning rate 0.02.</div></li>
+</ol></section>
+<section class="block">
+  <div class="label">The code that ran it</div>
+  <figure class="code"><figcaption>quantumtf_demo/models.py · build_qnn() · lines 43–63</figcaption><pre><code><span class="ln">43</span><span class="kw">def</span> build_qnn(size=SIZE, lr=0.01, noise=0.0, repetitions=200):
+<span class="ln">44</span>    <span class="str">&quot;&quot;&quot;Pure-quantum classifier: a single &lt;Z&gt; on the readout qubit is the output.
+<span class="ln">45</span>
+<span class="ln">46</span>    With noise &gt; 0 the model circuit gets a depolarizing channel after every
+<span class="ln">47</span>    moment and is simulated with trajectories (NoisyPQC + parameter shift).
+<span class="ln">48</span>    &quot;&quot;&quot;</span>
+<span class="ln">49</span>    circuit, readout, _ = qnn_circuit(size)
+<span class="ln">50</span>    inputs = keras.Input(shape=(), dtype=tf.string)
+<span class="ln">51</span>    <span class="kw">if</span> noise &gt; 0:
+<span class="ln">52</span>        noisy = circuit.with_noise(cirq.depolarize(noise))
+<span class="ln">53</span>        layer = tfq.layers.NoisyPQC(
+<span class="ln">54</span>            noisy,
+<span class="ln">55</span>            cirq.Z(readout),
+<span class="ln">56</span>            repetitions=repetitions,
+<span class="ln">57</span>            sample_based=<span class="kw">False</span>,
+<span class="ln">58</span>            differentiator=tfq.differentiators.ParameterShift(),
+<span class="ln">59</span>        )
+<span class="ln">60</span>    <span class="kw">else</span>:
+<span class="ln">61</span>        layer = tfq.layers.PQC(circuit, cirq.Z(readout))
+<span class="ln">62</span>    model = keras.Model(inputs, layer(inputs))
+<span class="ln">63</span>    <span class="kw">return</span> _compile(model, lr)</code></pre></figure>
+  <details class="code"><summary>Show the experiment loop</summary>
+  <figure class="code"><figcaption>quantumtf_demo/experiments/noise.py · run() · lines 21–55</figcaption><pre><code><span class="ln">21</span><span class="kw">def</span> run(cfg):
+<span class="ln">22</span>    levels = cfg[<span class="str">&quot;noise_levels&quot;</span>]
+<span class="ln">23</span>    runs = {<span class="str">&quot;eval_only&quot;</span>: {str(p): [] <span class="kw">for</span> p <span class="kw">in</span> levels},
+<span class="ln">24</span>            <span class="str">&quot;trained_noisy&quot;</span>: {str(p): [] <span class="kw">for</span> p <span class="kw">in</span> levels}}
+<span class="ln">25</span>    <span class="kw">for</span> seed <span class="kw">in</span> cfg[<span class="str">&quot;seeds&quot;</span>]:
+<span class="ln">26</span>        <span class="com"># Part A: Experiment 1&#x27;s trained 4x4 QNN, tested under noise.</span>
+<span class="ln">27</span>        wfile = WEIGHTS / <span class="str">f&quot;qnn_seed{seed}.npy&quot;</span>
+<span class="ln">28</span>        <span class="kw">if</span> <span class="kw">not</span> wfile.exists():
+<span class="ln">29</span>            <span class="kw">raise</span> FileNotFoundError(<span class="str">f&quot;{wfile} missing: run the mnist_qnn experiment first&quot;</span>)
+<span class="ln">30</span>        _, _, x_te, y_te = data.load_binary_mnist(<span class="kw">None</span>, cfg[<span class="str">&quot;eval_n_test&quot;</span>], seed)
+<span class="ln">31</span>        t_te, yh_te = data.to_tensor(x_te), data.hinge_labels(y_te)
+<span class="ln">32</span>        weights = [np.load(wfile)]
+<span class="ln">33</span>        <span class="kw">for</span> p <span class="kw">in</span> levels:
+<span class="ln">34</span>            m = models.build_qnn(noise=p, repetitions=cfg[<span class="str">&quot;repetitions&quot;</span>])
+<span class="ln">35</span>            m.set_weights(weights)
+<span class="ln">36</span>            loss, acc = m.evaluate(t_te, yh_te, verbose=0)
+<span class="ln">37</span>            runs[<span class="str">&quot;eval_only&quot;</span>][str(p)].append({<span class="str">&quot;seed&quot;</span>: seed, <span class="str">&quot;test_loss&quot;</span>: float(loss),
+<span class="ln">38</span>                                              <span class="str">&quot;test_acc&quot;</span>: float(acc)})
+<span class="ln">39</span>            print(<span class="str">f&quot;  seed {seed} p={p}: eval-only (4x4) {acc:.3f}&quot;</span>, flush=<span class="kw">True</span>)
+<span class="ln">40</span>
+<span class="ln">41</span>        <span class="com"># Part B: train from scratch with the noise present, on smaller images.</span>
+<span class="ln">42</span>        size = cfg[<span class="str">&quot;size&quot;</span>]
+<span class="ln">43</span>        x_tr, y_tr, x_te, y_te = data.load_binary_mnist(cfg[<span class="str">&quot;n_train&quot;</span>], cfg[<span class="str">&quot;n_test&quot;</span>], seed, size=size)
+<span class="ln">44</span>        t_tr, t_te = data.to_tensor(x_tr, size), data.to_tensor(x_te, size)
+<span class="ln">45</span>        yh_tr, yh_te = data.hinge_labels(y_tr), data.hinge_labels(y_te)
+<span class="ln">46</span>        <span class="kw">for</span> p <span class="kw">in</span> levels:
+<span class="ln">47</span>            set_seed(seed)
+<span class="ln">48</span>            m = models.build_qnn(size, lr=cfg[<span class="str">&quot;lr&quot;</span>], noise=p, repetitions=cfg[<span class="str">&quot;repetitions&quot;</span>])
+<span class="ln">49</span>            r = train_eval(m, t_tr, yh_tr, t_te, yh_te, cfg[<span class="str">&quot;epochs&quot;</span>], cfg[<span class="str">&quot;batch_size&quot;</span>])
+<span class="ln">50</span>            runs[<span class="str">&quot;trained_noisy&quot;</span>][str(p)].append({<span class="str">&quot;seed&quot;</span>: seed, **r})
+<span class="ln">51</span>            print(<span class="str">f&quot;  seed {seed} p={p}: trained-noisy ({size}x{size}) {r[&#x27;test_acc&#x27;]:.3f}  &quot;</span>
+<span class="ln">52</span>                  <span class="str">f&quot;({r[&#x27;train_seconds&#x27;]:.0f}s)&quot;</span>, flush=<span class="kw">True</span>)
+<span class="ln">53</span>
+<span class="ln">54</span>    summary = {mode: {p: summarise(v) <span class="kw">for</span> p, v <span class="kw">in</span> by_p.items()} <span class="kw">for</span> mode, by_p <span class="kw">in</span> runs.items()}
+<span class="ln">55</span>    <span class="kw">return</span> save(<span class="str">&quot;noise&quot;</span>, {<span class="str">&quot;config&quot;</span>: cfg, <span class="str">&quot;summary&quot;</span>: summary, <span class="str">&quot;runs&quot;</span>: runs})</code></pre></figure></details>
+</section>
+<section class="block">
+  <div class="label">Caveats</div>
+  <ul class="caveats">
+    <li>The two curves are different models. Don't read the gap between them as a benefit of noise-aware training.</li>
+    <li>Every noisy estimate carries trajectory-sampling error on top of the channel itself (50 trajectories).</li>
+    <li>The 3×3 input caps any model at 84.0%.</li>
+  </ul>
+  <p><a href="paper.html#sec-res-noise">Read §4.4 in the paper</a></p>
+</section>
+<nav class="pager" aria-label="Experiments"><a href="barren.html"><span>Previous</span>Barren plateaus</a><a class="next" href="paper.html"><span>Next</span>The paper</a></nav>
+<footer class="site"><span>Amal Mehta, independent researcher</span><span>TensorFlow 2.18.1 · TensorFlow Quantum 0.7.6 · Cirq 1.5.0</span>
+<span>Built 2026-10-10 from results/*.json</span></footer>
+</main>
+<script src="assets/data.js"></script>
+<script src="assets/site.js"></script>
+
+</body>
+</html>

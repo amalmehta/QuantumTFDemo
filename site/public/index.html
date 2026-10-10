@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Quantum TF Demo</title>
+<meta name="description" content="A reproducible TensorFlow Quantum study: a 17-qubit QNN on MNIST digits, a classical baseline, a hybrid head, barren plateaus and noise.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+
+</head>
+<body>
+<header class="top"><div class="bar">
+  <a class="name" href="./">Quantum TF Demo</a>
+  <nav aria-label="Site"><a href="mnist.html">QNN vs classical</a><a href="hybrid.html">Hybrid</a><a href="barren.html">Barren plateaus</a><a href="noise.html">Noise</a><a href="paper.html">Paper</a><a href="run.html">Run it</a><a href="about.html">About</a></nav>
+</div></header>
+<main class="frame">
+
+<header class="page-head">
+  <div class="label">TensorFlow Quantum · training experiments</div>
+  <h1>Training a quantum neural network on handwritten digits, and where it struggles</h1>
+  <p class="lede">A small, reproducible study by Amal Mehta. A 17-qubit circuit learns to tell a 3 from a 6. We compare it with a classical network of the same size, add a classical head, measure how gradients vanish as circuits grow, and test it under simulated hardware noise.</p>
+</header>
+<figure class="circuit">
+  <svg data-circuit role="img" aria-label="QNN circuit: data qubits each couple to a readout qubit through XX and ZZ gates, then the readout is measured in Z"></svg>
+  <figcaption>The model (Farhi &amp; Neven, 2018). Each white pixel flips its data qubit to <span class="ket">|1⟩</span>. Every data qubit then couples to the readout qubit through one trainable <span class="ket">XX<sup>θ</sup></span> gate and one <span class="ket">ZZ<sup>φ</sup></span> gate. The prediction is <span class="ket">⟨Z⟩</span> on the readout. Four of the 16 data wires are drawn.</figcaption>
+</figure>
+<div class="facts" style="padding-block:1.5rem 0">
+  <div><b>17</b><span>qubits in the main model</span></div>
+  <div><b>32</b><span>trainable angles</span></div>
+  <div><b>4×4</b><span>pixels per digit</span></div>
+  <div><b>3</b><span>seeds per experiment</span></div>
+  <div><b>91.6%</b><span>best possible on this input</span></div>
+</div>
+<section class="block">
+  <div class="label">Four experiments</div>
+  <div class="cards"><a class="card" href="mnist.html"><div class="label">Experiment 1</div><h3>QNN vs classical</h3>
+<div class="num">86.8% <small>vs 90.9%</small></div><p>A 32-angle quantum circuit against a 37-weight classical network on the same pixels. The classical one wins.</p><span class="go">See the experiment →</span></a><a class="card" href="hybrid.html"><div class="label">Experiment 2</div><h3>Hybrid head</h3>
+<div class="num">+3.8 <small>points</small></div><p>Reading out every qubit into a small dense layer lifts the QNN to the classical score.</p><span class="go">See the experiment →</span></a><a class="card" href="barren.html"><div class="label">Experiment 3</div><h3>Barren plateaus</h3>
+<div class="num">÷27 <small>from 2 to 8 qubits</small></div><p>Gradients in random circuits shrink as circuits widen, then flatten in this sweep at 50 layers.</p><span class="go">See the experiment →</span></a><a class="card" href="noise.html"><div class="label">Experiment 4</div><h3>Depolarizing noise</h3>
+<div class="num">85.9% → 50.1%</div><p>A trained 17-qubit model falls to chance at p = 0.03 noise per moment.</p><span class="go">See the experiment →</span></a></div>
+</section>
+<section class="block">
+  <div class="prose">
+    <div class="label">The paper</div>
+    <h2>Training Quantum Neural Networks with TensorFlow Quantum: a Small, Reproducible Study</h2>
+    <p>Quantum neural networks (QNNs) are easy to describe and surprisingly hard to evaluate fairly. We present a small, fully reproducible study built on TensorFlow Quantum, aimed at readers who want to see the main behaviours of QNN training first-hand. A 17-qubit Farhi–Neven QNN learns to separate 3s from 6s in $4\times4$ binarised MNIST, reaching 0.868 test accuracy over 3 seeds. A classical network with 37 weights reaches 0.909, and adding an 8-unit classical head to the same circuit lifts it to 0.906. Both are close to the 0.916 that a lookup table over the training patterns sets as a ceiling for this input. Gradient variance in random circuits falls 27-fold from 2 to 8 qubits. Under depolarizing noise, models trained without noise drop to 0.770 at $p=0.01$ and to chance at $p=0.03$. Code, raw results and the scripts that generate every number in this paper are released.</p>
+    <p><a href="paper.html">Read the paper on the web</a> · <a href="paper.pdf">PDF</a> · <a href="run.html">Reproduce every number</a></p>
+  </div>
+</section>
+<footer class="site"><span>Amal Mehta, independent researcher</span><span>TensorFlow 2.18.1 · TensorFlow Quantum 0.7.6 · Cirq 1.5.0</span>
+<span>Built 2026-10-10 from results/*.json</span></footer>
+</main>
+<script src="assets/data.js"></script>
+<script src="assets/site.js"></script>
+
+</body>
+</html>

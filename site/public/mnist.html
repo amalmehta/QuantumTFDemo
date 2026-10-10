@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>QNN vs Classical · Quantum TF Demo</title>
+<meta name="description" content="Experiment 1: the Farhi–Neven QNN against a classical network of the same size.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+
+</head>
+<body>
+<header class="top"><div class="bar">
+  <a class="name" href="./">Quantum TF Demo</a>
+  <nav aria-label="Site"><a href="mnist.html" aria-current="page">QNN vs classical</a><a href="hybrid.html">Hybrid</a><a href="barren.html">Barren plateaus</a><a href="noise.html">Noise</a><a href="paper.html">Paper</a><a href="run.html">Run it</a><a href="about.html">About</a></nav>
+</div></header>
+<main class="frame">
+
+<header class="page-head">
+  <div class="label">Experiment 1 of 4</div>
+  <h1>QNN vs a classical network of the same size</h1>
+  <p class="q">Can 32 trainable angles in a quantum circuit match 37 classical weights on the same pixels?</p>
+  <p class="lede">Not quite. The QNN reaches 86.8% test accuracy and the classical network 90.9%, close to the 91.6% ceiling that the 4×4 input allows.</p>
+</header>
+<section class="block">
+  <div class="label">Results</div>
+  <div class="result"><div class="chart" data-chart="mnist" data-seeds></div><div class="numbers" data-numbers="mnist"></div></div>
+  <p class="prose">The classical network is behind after the first epoch, then pulls ahead and stays there with much less spread across seeds. The QNN's loss barely moves after epoch 2. Shaded bands show ±1 standard deviation over 3 seeds; tick "Show each seed" to see the individual runs.</p>
+  <div class="table-wrap"><table class="data"><thead><tr><th>Seed</th><th>QNN</th><th>Hybrid</th><th>Classical</th>
+<th>QNN (s)</th><th>Hybrid (s)</th><th>Classical (s)</th></tr></thead><tbody><tr><td>0</td><td>0.898</td><td>0.907</td><td>0.909</td><td>1020</td><td>888</td><td>5</td></tr><tr><td>1</td><td>0.864</td><td>0.898</td><td>0.903</td><td>303</td><td>467</td><td>3</td></tr><tr><td>2</td><td>0.841</td><td>0.913</td><td>0.916</td><td>305</td><td>554</td><td>8</td></tr><tr><td><strong>mean ± std</strong></td><td><strong>0.868 ± 0.023</strong></td><td><strong>0.906 ± 0.006</strong></td><td><strong>0.909 ± 0.006</strong></td><td></td><td></td><td></td></tr></tbody></table></div>
+<p class="muted" style="font-size:var(--step--1)">Test accuracy per seed, and wall-clock training seconds. Times varied with machine load.</p>
+</section>
+<section class="block"><div class="label">Method</div><ol class="steps">
+<li><div><strong>Keep two digits.</strong> MNIST 3s and 6s only (1,968 test images).</div></li>
+<li><div><strong>Shrink to 4×4.</strong> Bilinear resize, then drop training images whose small version appears with both labels, leaving 11,520. This happens before binarising, as in the TFQ tutorial.</div></li>
+<li><div><strong>Binarise.</strong> Pixels above 0.5 become 1. Only 193 distinct patterns remain, so a lookup table over them is the best any model can do: 91.6% on the test set.</div></li>
+<li><div><strong>Encode.</strong> Each lit pixel becomes an <code>X</code> gate on its qubit, giving a basis state of 16 qubits.</div></li>
+<li><div><strong>Train.</strong> Each seed draws 3,000 training and 500 test images. Hinge loss on ±1 labels, Adam (learning rate 0.01, batch 32), 4 epochs, exact simulation with adjoint gradients.</div></li>
+</ol></section>
+<section class="block">
+  <div class="label">The code that ran it</div>
+  <figure class="code"><figcaption>quantumtf_demo/models.py · qnn_circuit() · lines 9–25</figcaption><pre><code><span class="ln">9</span><span class="kw">def</span> qnn_circuit(size=SIZE, gates=(<span class="str">&quot;XX&quot;</span>, <span class="str">&quot;ZZ&quot;</span>)):
+<span class="ln">10</span>    <span class="str">&quot;&quot;&quot;Parameterised circuit: each data qubit couples to a readout qubit.
+<span class="ln">11</span>
+<span class="ln">12</span>    Returns (circuit, readout_qubit, symbols). One layer per gate type, one
+<span class="ln">13</span>    parameter per (layer, data qubit), so 2 * size**2 parameters by default.
+<span class="ln">14</span>    &quot;&quot;&quot;</span>
+<span class="ln">15</span>    qubits = data_qubits(size)
+<span class="ln">16</span>    circuit = cirq.Circuit([cirq.X(READOUT), cirq.H(READOUT)])
+<span class="ln">17</span>    symbols = []
+<span class="ln">18</span>    <span class="kw">for</span> name <span class="kw">in</span> gates:
+<span class="ln">19</span>        gate = getattr(cirq, name)
+<span class="ln">20</span>        <span class="kw">for</span> i, q <span class="kw">in</span> enumerate(qubits):
+<span class="ln">21</span>            s = sympy.Symbol(<span class="str">f&quot;{name.lower()}{i}&quot;</span>)
+<span class="ln">22</span>            symbols.append(s)
+<span class="ln">23</span>            circuit.append(gate(q, READOUT) ** s)
+<span class="ln">24</span>    circuit.append(cirq.H(READOUT))
+<span class="ln">25</span>    <span class="kw">return</span> circuit, READOUT, symbols</code></pre></figure>
+  <details class="code"><summary>Show the classical baseline and the data pipeline</summary><div class="stack">
+  <figure class="code"><figcaption>quantumtf_demo/models.py · build_classical() · lines 77–87</figcaption><pre><code><span class="ln">77</span><span class="kw">def</span> build_classical(size=SIZE, lr=0.01, hidden=2):
+<span class="ln">78</span>    <span class="str">&quot;&quot;&quot;&#x27;Fair&#x27; classical baseline on the same binarised pixels (37 parameters at 4x4).&quot;&quot;&quot;</span>
+<span class="ln">79</span>    model = keras.Sequential(
+<span class="ln">80</span>        [
+<span class="ln">81</span>            keras.Input(shape=(size, size)),
+<span class="ln">82</span>            keras.layers.Flatten(),
+<span class="ln">83</span>            keras.layers.Dense(hidden, activation=<span class="str">&quot;relu&quot;</span>),
+<span class="ln">84</span>            keras.layers.Dense(1, activation=<span class="str">&quot;tanh&quot;</span>),
+<span class="ln">85</span>        ]
+<span class="ln">86</span>    )
+<span class="ln">87</span>    <span class="kw">return</span> _compile(model, lr)</code></pre></figure>
+  <figure class="code"><figcaption>quantumtf_demo/data.py · load_binary_mnist() · lines 35–59</figcaption><pre><code><span class="ln">35</span><span class="kw">def</span> load_binary_mnist(n_train=<span class="kw">None</span>, n_test=<span class="kw">None</span>, seed=0, size=SIZE):
+<span class="ln">36</span>    <span class="str">&quot;&quot;&quot;Return (x_train, y_train, x_test, y_test) as binarised size x size arrays.
+<span class="ln">37</span>
+<span class="ln">38</span>    Labels are booleans (True = digit 3). Subsets are drawn with `seed`.
+<span class="ln">39</span>    &quot;&quot;&quot;</span>
+<span class="ln">40</span>    (x_tr, y_tr), (x_te, y_te) = keras.datasets.mnist.load_data()
+<span class="ln">41</span>    out = []
+<span class="ln">42</span>    <span class="kw">for</span> x, y <span class="kw">in</span> ((x_tr, y_tr), (x_te, y_te)):
+<span class="ln">43</span>        x, y = _filter_36(x, y)
+<span class="ln">44</span>        x = x[..., np.newaxis].astype(<span class="str">&quot;float32&quot;</span>) / 255.0
+<span class="ln">45</span>        x = tf.image.resize(x, (size, size)).numpy()[..., 0]
+<span class="ln">46</span>        out.append((x, y))
+<span class="ln">47</span>    (x_tr, y_tr), (x_te, y_te) = out
+<span class="ln">48</span>    x_tr, y_tr = remove_contradicting(x_tr, y_tr)
+<span class="ln">49</span>    x_tr = (x_tr &gt; THRESHOLD).astype(<span class="str">&quot;float32&quot;</span>)
+<span class="ln">50</span>    x_te = (x_te &gt; THRESHOLD).astype(<span class="str">&quot;float32&quot;</span>)
+<span class="ln">51</span>
+<span class="ln">52</span>    rng = np.random.default_rng(seed)
+<span class="ln">53</span>    <span class="kw">if</span> n_train <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span> <span class="kw">and</span> n_train &lt; len(x_tr):
+<span class="ln">54</span>        idx = rng.choice(len(x_tr), n_train, replace=<span class="kw">False</span>)
+<span class="ln">55</span>        x_tr, y_tr = x_tr[idx], y_tr[idx]
+<span class="ln">56</span>    <span class="kw">if</span> n_test <span class="kw">is</span> <span class="kw">not</span> <span class="kw">None</span> <span class="kw">and</span> n_test &lt; len(x_te):
+<span class="ln">57</span>        idx = rng.choice(len(x_te), n_test, replace=<span class="kw">False</span>)
+<span class="ln">58</span>        x_te, y_te = x_te[idx], y_te[idx]
+<span class="ln">59</span>    <span class="kw">return</span> x_tr, y_tr, x_te, y_te</code></pre></figure>
+  <figure class="code"><figcaption>quantumtf_demo/data.py · encode_image() · lines 66–73</figcaption><pre><code><span class="ln">66</span><span class="kw">def</span> encode_image(image, size=SIZE):
+<span class="ln">67</span>    <span class="str">&quot;&quot;&quot;Basis encoding: an X gate on each qubit whose pixel is 1.&quot;&quot;&quot;</span>
+<span class="ln">68</span>    qubits = data_qubits(size)
+<span class="ln">69</span>    circuit = cirq.Circuit()
+<span class="ln">70</span>    <span class="kw">for</span> q, v <span class="kw">in</span> zip(qubits, np.ravel(image)):
+<span class="ln">71</span>        <span class="kw">if</span> v:
+<span class="ln">72</span>            circuit.append(cirq.X(q))
+<span class="ln">73</span>    <span class="kw">return</span> circuit</code></pre></figure>
+  </div></details>
+</section>
+<section class="block">
+  <div class="label">Caveats</div>
+  <ul class="caveats">
+    <li>Exact simulation on a CPU: the QNN's training time says nothing about quantum hardware.</li>
+    <li>3 seeds and two hyperparameter settings tried on seed 0. Treat differences of a point or two with care.</li>
+    <li>The input is so coarse that every model is capped near 91.6%. This task can't show a quantum advantage.</li>
+  </ul>
+  <p><a href="paper.html#sec-res-mnist">Read §4.1 in the paper</a></p>
+</section>
+<nav class="pager" aria-label="Experiments"><a href="./"><span>Back to</span>Home</a><a class="next" href="hybrid.html"><span>Next</span>Hybrid</a></nav>
+<footer class="site"><span>Amal Mehta, independent researcher</span><span>TensorFlow 2.18.1 · TensorFlow Quantum 0.7.6 · Cirq 1.5.0</span>
+<span>Built 2026-10-10 from results/*.json</span></footer>
+</main>
+<script src="assets/data.js"></script>
+<script src="assets/site.js"></script>
+
+</body>
+</html>

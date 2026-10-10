@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Paper · Quantum TF Demo</title>
+<meta name="description" content="Training Quantum Neural Networks with TensorFlow Quantum: a Small, Reproducible Study">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+<script>window.MathJax = { tex: { inlineMath: [["$", "$"]], macros: { ket: ["\\lvert #1\\rangle", 1] } },
+  svg: { fontCache: "global" } };</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.2/es5/tex-svg-full.min.js" defer></script>
+</head>
+<body>
+<header class="top"><div class="bar">
+  <a class="name" href="./">Quantum TF Demo</a>
+  <nav aria-label="Site"><a href="mnist.html">QNN vs classical</a><a href="hybrid.html">Hybrid</a><a href="barren.html">Barren plateaus</a><a href="noise.html">Noise</a><a href="paper.html" aria-current="page">Paper</a><a href="run.html">Run it</a><a href="about.html">About</a></nav>
+</div></header>
+<main class="frame">
+
+<header class="page-head">
+  <div class="label">Paper · preprint</div>
+  <h1>Training Quantum Neural Networks with TensorFlow Quantum: a Small, Reproducible Study</h1>
+  <div class="paper-meta"><span>Amal Mehta, independent researcher</span><span>2026</span><a href="paper.pdf">PDF version</a></div>
+</header>
+<article class="paper">
+<div class="abstract"><div class="label">Abstract</div><p>Quantum neural networks (QNNs) are easy to describe and surprisingly hard to evaluate fairly. We present a small, fully reproducible study built on TensorFlow Quantum, aimed at readers who want to see the main behaviours of QNN training first-hand. A 17-qubit Farhi–Neven QNN learns to separate 3s from 6s in $4\times4$ binarised MNIST, reaching 0.868 test accuracy over 3 seeds. A classical network with 37 weights reaches 0.909, and adding an 8-unit classical head to the same circuit lifts it to 0.906. Both are close to the 0.916 that a lookup table over the training patterns sets as a ceiling for this input. Gradient variance in random circuits falls 27-fold from 2 to 8 qubits. Under depolarizing noise, models trained without noise drop to 0.770 at $p=0.01$ and to chance at $p=0.03$. Code, raw results and the scripts that generate every number in this paper are released.</p></div>
+<h2 id="sec-intro">1&ensp;Introduction</h2>
+<p>Parameterised quantum circuits trained by gradient descent are the most common model in near-term quantum machine learning [<a href="#ref-preskill2018nisq">11</a>, <a href="#ref-cerezo2021vqa">3</a>]. Software such as TensorFlow Quantum (TFQ) [<a href="#ref-broughton2020tfq">2</a>] lets anyone train them on a laptop. That makes it easy to run a demo, and also easy to misread one: without a matched classical baseline, a sense of what the data allows, or a look at gradients and noise, a working QNN says little.</p>
+<p>This paper is a compact, reproducible tour of those checks on one task: the Farhi–Neven QNN [<a href="#ref-farhi2018classification">4</a>] on $4\times4$ MNIST 3-vs-6, the setting of the TFQ tutorial. We contribute:</p>
+<ul><li>a matched comparison of the QNN, a classical network of similar size, and a hybrid model that
+        adds a classical head to the same circuit, alongside the accuracy ceiling the input allows
+        (§<a href="#sec-res-mnist">4.1</a>, §<a href="#sec-res-hybrid">4.2</a>);</li><li>measurements of gradient variance in random circuits as width and depth grow
+        (§<a href="#sec-res-barren">4.3</a>);</li><li>the effect of depolarizing noise, both on trained models and during training
+        (§<a href="#sec-res-noise">4.4</a>);</li><li>code that regenerates every figure, table and number from raw results with one command,
+        running on current TFQ (0.7.6) in Docker.</li></ul>
+<p>None of these phenomena are new. The point is to reproduce them together, with error bars, in a form that is easy to rerun and extend.</p>
+<h2 id="sec-background">2&ensp;Background</h2>
+<p><strong>Quantum neural networks.</strong> A parameterised quantum circuit (PQC) applies gates whose angles are trainable, and its output is the expectation value of an observable. Trained by gradient descent, PQCs are the near-term analogue of neural networks [<a href="#ref-preskill2018nisq">11</a>, <a href="#ref-cerezo2021vqa">3</a>]. Farhi and Neven [<a href="#ref-farhi2018classification">4</a>] proposed a QNN for binary classification in which every data qubit couples to a single readout qubit, and the prediction is $\langle Z\rangle$ on that readout. We use their architecture throughout.</p>
+<p><strong>Gradients.</strong> On hardware, gradients come from the parameter-shift rule, which evaluates the circuit at shifted angles [<a href="#ref-mitarai2018qcl">10</a>, <a href="#ref-schuld2019gradients">12</a>]. In exact classical simulation, the adjoint method gives all gradients at roughly the cost of one forward and one backward pass [<a href="#ref-jones2020adjoint">6</a>].</p>
+<p><strong>Barren plateaus.</strong> For sufficiently random circuits, the variance of the gradient with respect to any parameter decays exponentially in the number of qubits [<a href="#ref-mcclean2018barren">9</a>]. Hardware noise can induce the same effect even in shallow circuits [<a href="#ref-wang2021noise">13</a>].</p>
+<p><strong>TensorFlow Quantum.</strong> TFQ [<a href="#ref-broughton2020tfq">2</a>] represents circuits (built with Cirq) as tensors and exposes simulation, expectation values and their gradients as Keras layers on top of TensorFlow [<a href="#ref-abadi2016tensorflow">1</a>]. The same model code can use exact, noisy or sampled simulation. Its tutorials include a version of the Farhi–Neven MNIST task, which we follow for the data pipeline. Huang et al. [<a href="#ref-huang2021power">5</a>] discuss when classical models can match quantum ones on data like this, which is relevant to our baseline.</p>
+<h2 id="sec-setup">3&ensp;Setup</h2>
+<p><strong>Data.</strong> We keep the 3s and 6s from MNIST [<a href="#ref-lecun1998mnist">8</a>] and downsample each image to $4\times4$ by bilinear resizing. As in the TFQ tutorial, we then remove training images whose downsampled form occurs with both labels, and binarise every pixel at a threshold of 0.5. Each lit pixel becomes an $X$ gate, so an image is the basis state $\ket{x}$ of 16 data qubits. Each seed draws 3000 training and 500 test images at random.</p>
+<p><strong>Models.</strong> <em>QNN.</em> A readout qubit is prepared with $X$ then $H$. Every data qubit $i$ then couples to it through $XX^{\theta_i}$, then $ZZ^{\phi_i}$, and a final $H$ is applied to the readout (Fig.&nbsp;<a href="#fig-circuit">1</a>). The prediction is $\langle Z\rangle\in[-1,1]$ on the readout, giving 32 parameters on 17 qubits. <em>Hybrid.</em> The same circuit, but $\langle Z\rangle$ on all 17 qubits feeds a dense layer with 8 ReLU units and a $\tanh$ output (185 parameters). <em>Classical.</em> A multilayer perceptron on the same 16 binary pixels, with 2 ReLU units and a $\tanh$ output (37 parameters), chosen to roughly match the QNN's parameter count.</p>
+<figure id="fig-circuit" class="wide"><div class="circuit"><svg data-circuit role="img" aria-label="QNN circuit"></svg></div><figcaption><b>Figure 1.</b> The QNN circuit, with two of the 16 data qubits drawn. Each data qubit couples to the
+readout qubit through one trainable $XX$ gate and one trainable $ZZ$ gate.</figcaption></figure>
+<p><strong>Training.</strong> All models minimise the hinge loss on labels $\pm1$ with Adam [<a href="#ref-kingma2014adam">7</a>] (learning rate 0.01, batch size 32) for 4 epochs, over 3 seeds. Quantum models are simulated exactly and differentiated with the adjoint method. We report mean $\pm$ standard deviation over seeds. We chose the batch size and learning rate from two candidate settings on seed 0.</p>
+<p><strong>Barren plateaus.</strong> Following McClean et al. [<a href="#ref-mcclean2018barren">9</a>], each random circuit applies $R_y(\pi/4)$ to every qubit, then layers of a uniformly random choice of $R_x$, $R_y$ or $R_z$ per qubit followed by a CZ ladder. We estimate $\mathrm{Var}[\partial\langle Z_0Z_1\rangle/\partial\theta_0]$ over 200 random circuits and angles, sweeping 2–12 qubits at 50 layers, and 1–50 layers at 8 qubits.</p>
+<p><strong>Noise.</strong> A single-qubit depolarizing channel with probability $p$ follows every moment of the model circuit. Expectations average 50 quantum trajectories. We run two measurements. (i) The $4\times4$ QNNs trained above are tested under noise on 500 test images (a separate random draw from the one in Table&nbsp;<a href="#tab-mnist">1</a>, so the noise-free accuracies differ slightly). (ii) Models are trained and tested with the noise present. Training through trajectories needs parameter-shift gradients, which made 17 qubits too slow, so (ii) uses $3\times3$ images (10 qubits), 200 training and 200 test images, 3 epochs, batch size 16 and learning rate 0.02.</p>
+<p><strong>Software and hardware.</strong> TensorFlow 2.18.1, TensorFlow Quantum 0.7.6 and Cirq 1.5.0, in a Linux Docker container with 8 CPU cores on an Intel laptop, with no GPU.</p>
+<h2 id="sec-results">4&ensp;Results</h2>
+<h3 id="sec-res-mnist">4.1&ensp;The QNN learns the task, and a classical network of similar size does slightly better</h3>
+<figure id="tab-mnist" class="wide"><figcaption><b>Table 1.</b> Test accuracy on $4\times4$ binarised MNIST 3-vs-6 (mean $\pm$ std over 3 seeds,
+3000 training and 500 test images per seed, 4 epochs). A
+lookup table over training patterns reaches 0.916. Training time is the mean wall-clock time
+of simulated training on CPU. It varied by up to $3\times$ across seeds with machine load.</figcaption><div class="table-wrap"><table class="data"><thead><tr><th>Model</th><th>Parameters</th><th>Test accuracy</th><th>Train time (s)</th></tr></thead><tbody><tr><td>QNN (quantum readout)</td><td>32</td><td>0.868 $\pm$ 0.023</td><td>543</td></tr><tr><td>QNN + dense head (hybrid)</td><td>185</td><td>0.906 $\pm$ 0.006</td><td>636</td></tr><tr><td>classical MLP</td><td>37</td><td><strong>0.909 $\pm$ 0.006</strong></td><td>5</td></tr></tbody></table></div></figure>
+<figure id="fig-mnist" class="wide"><div class="chart" data-chart="mnist"></div><figcaption><b>Figure 2.</b> The classical network overtakes the QNN after the first epoch and ends higher, with less spread across seeds.
+Test hinge loss and accuracy per epoch, mean $\pm$ std over 3 seeds.</figcaption></figure>
+<p>The QNN reaches 0.868 $\pm$ 0.023 test accuracy (Table&nbsp;<a href="#tab-mnist">1</a>, Fig.&nbsp;<a href="#fig-mnist">2</a>). The classical network, with 37 parameters against the QNN's 32, reaches 0.909 $\pm$ 0.006. Both are bounded by the input: binarising to $4\times4$ leaves 193 distinct training patterns, and predicting each pattern's majority label scores 0.916 on the full test set. The classical model sits almost on that ceiling, so on this input there is little room for any model to do better. The QNN also took about 543&thinsp;s to train in simulation, against 5&thinsp;s for the classical network.</p>
+<h3 id="sec-res-hybrid">4.2&ensp;A classical head on the readouts closes the gap</h3>
+<figure id="fig-hybrid" class="wide"><div class="chart" data-chart="hybrid"></div><figcaption><b>Figure 3.</b> Reading out every qubit and adding a small dense head improves accuracy and reduces
+variance across seeds. Same data, seeds and circuit as Fig.&nbsp;<a href="#fig-mnist">2</a>.</figcaption></figure>
+<p>Measuring $\langle Z\rangle$ on all 17 qubits and passing the values through an 8-unit dense layer raises accuracy by 3.8 points, to 0.906 $\pm$ 0.006 (Fig.&nbsp;<a href="#fig-hybrid">3</a>). This matches the classical model. The gain cannot be attributed to the circuit alone: the hybrid model has 185 parameters, most of them classical, and 16 of its 17 readouts are on data qubits, which start in the input's basis state.</p>
+<h3 id="sec-res-barren">4.3&ensp;Gradients shrink as random circuits grow</h3>
+<figure id="fig-barren" class="wide"><div class="chart" data-chart="barren"></div><figcaption><b>Figure 4.</b> Gradient variance falls with width and with depth. Left: variance of
+$\partial\langle Z_0Z_1\rangle/\partial\theta_0$ against qubit count at 50 layers, with a
+log-linear fit over all points. Right: against depth at 8 qubits. Each point uses
+200 random circuits.</figcaption></figure>
+<p>At 50 layers, the gradient variance falls from $8.6\times10^{-2}$ at 2 qubits to $3.2\times10^{-3}$ at 8 qubits, a factor of 27 (Fig.&nbsp;<a href="#fig-barren">4</a>, left). Beyond 8 qubits it stops falling in our sweep, reaching $2.8\times10^{-3}$ at 12 qubits, so a single exponential (decay factor 0.71 per qubit) describes the trend only loosely. The depth sweep suggests why. At 8 qubits the variance is still falling at 50 layers, 38 times below its single-layer value (Fig.&nbsp;<a href="#fig-barren">4</a>, right), so 50 layers are probably not enough for the wider circuits to behave as random as the theory assumes [<a href="#ref-mcclean2018barren">9</a>]. We did not test this directly.</p>
+<h3 id="sec-res-noise">4.4&ensp;Depolarizing noise erodes accuracy quickly</h3>
+<figure id="fig-noise" class="wide"><div class="chart" data-chart="noise"></div><figcaption><b>Figure 5.</b> Trained $4\times4$ QNNs fall to chance by $p=0.03$. Smaller $3\times3$ models
+trained with the noise present hold their accuracy up to $p=0.01$. The two curves are different
+models with different circuit depths, so compare slopes, not heights. Mean $\pm$ std over
+3 seeds; 50 trajectories per expectation.</figcaption></figure>
+<figure id="tab-noise" class="wide"><figcaption><b>Table 2.</b> Test accuracy under depolarizing noise with probability $p$ per qubit per moment (mean $\pm$ std over
+3 seeds).</figcaption><div class="table-wrap"><table class="data"><thead><tr><th>$p$</th><th>3$\times$3, trained with noise</th><th>4$\times$4, trained clean, tested with noise</th></tr></thead><tbody><tr><td>0.0</td><td>0.862 $\pm$ 0.036</td><td>0.859 $\pm$ 0.031</td></tr><tr><td>0.001</td><td>0.857 $\pm$ 0.040</td><td>0.856 $\pm$ 0.028</td></tr><tr><td>0.003</td><td>0.859 $\pm$ 0.040</td><td>0.846 $\pm$ 0.026</td></tr><tr><td>0.01</td><td>0.859 $\pm$ 0.040</td><td>0.770 $\pm$ 0.022</td></tr><tr><td>0.03</td><td>0.753 $\pm$ 0.056</td><td>0.501 $\pm$ 0.010</td></tr></tbody></table></div></figure>
+<p>The $4\times4$ QNNs from §<a href="#sec-res-mnist">4.1</a>, tested under noise, go from 0.859 without noise to 0.770 at $p=0.01$ and 0.501 at $p=0.03$, which is chance (Fig.&nbsp;<a href="#fig-noise">5</a>, Table&nbsp;<a href="#tab-noise">2</a>). The channel acts after every moment of a circuit with 32 two-qubit couplings, so errors accumulate before the readout is measured. The $3\times3$ models trained with the noise present keep 0.859 at $p=0.01$, against 0.862 without noise, and drop to 0.753 at $p=0.03$. This comparison is confounded: the $3\times3$ circuit has 18 couplings rather than 32, so it accumulates less noise whether or not it is trained with it. Separating the effect of noise-aware training from circuit size would need noisy training at $4\times4$, which was too slow for us (§<a href="#sec-setup">3</a>).</p>
+<h2 id="sec-limitations">5&ensp;Limitations</h2>
+<p>Everything here is classical simulation of small circuits. The task (two digits at $4\times4$ binary pixels) is far from where a quantum advantage could appear, and the input is so coarse that even a lookup table over training patterns sets a ceiling well below standard MNIST accuracies. We ran 3 seeds and lightly tuned two hyperparameters on one seed, so small differences between models should not be over-read. The noisy-training study uses smaller $3\times3$ images than the rest of the paper, and every noisy expectation carries trajectory-sampling error on top of the channel itself. The barren-plateau sweep stops at 12 qubits, with 200 circuits per point. None of these results are new. They reproduce known behaviour with current open-source tools.</p>
+<h2 id="sec-conclusion">6&ensp;Conclusion</h2>
+<p>TensorFlow Quantum makes the full loop (encoding classical data as circuits, training a QNN as a Keras layer, switching to noisy simulation, and probing gradient statistics) a few hundred lines of Python that run on a laptop CPU. On this small task, a classical model of similar size matches or beats the QNN, a classical head on the circuit's readouts brings the QNN up to that baseline, gradient variance shrinks as random circuits grow, and depolarizing noise quickly erodes a trained model's accuracy. These are the behaviours a newcomer to quantum machine learning should expect to see.</p>
+<p><strong>Reproducibility.</strong> All code, configurations and raw results ship with this paper. One command (<code>python -m quantumtf_demo.run_all &#45;&#45;preset full</code>) reruns every experiment in Docker. Every number in the text is generated from the result files by a script, and <code>sources.md</code> records where each value comes from.</p>
+<h2>Use of AI tools</h2>
+<p>An AI assistant (Claude) wrote the experiment code, ran the experiments, generated the figure and table scripts, drafted the text and checked the references against arXiv and Crossref. The author chose the scope and the experiments. <span class="todo">[To do: state what the author reviewed and edited before release.]</span></p>
+<h2 id="references">References</h2>
+<ol class="refs"><li id="ref-abadi2016tensorflow" value="1">Abadi, Martín et al. (2016). TensorFlow: Large-Scale Machine Learning on Heterogeneous Distributed Systems. <em>arXiv preprint</em>. <a href="https://arxiv.org/abs/1603.04467">arXiv:1603.04467</a></li>
+<li id="ref-broughton2020tfq" value="2">Broughton, Michael, Verdon, Guillaume, McCourt, Trevor et al. (2020). TensorFlow Quantum: A Software Framework for Quantum Machine Learning. <em>arXiv preprint</em>. <a href="https://arxiv.org/abs/2003.02989">arXiv:2003.02989</a></li>
+<li id="ref-cerezo2021vqa" value="3">Cerezo, M., Arrasmith, Andrew, Babbush, Ryan, Benjamin, Simon C., Endo, Suguru, Fujii, Keisuke, McClean, Jarrod R., Mitarai, Kosuke, Yuan, Xiao, Cincio, Lukasz, and Coles, Patrick J. (2021). Variational quantum algorithms. <em>Nature Reviews Physics 3, 625–644</em>. <a href="https://doi.org/10.1038/s42254-021-00348-9">doi:10.1038/s42254-021-00348-9</a>; <a href="https://arxiv.org/abs/2012.09265">arXiv:2012.09265</a></li>
+<li id="ref-farhi2018classification" value="4">Farhi, Edward, and Neven, Hartmut (2018). Classification with Quantum Neural Networks on Near Term Processors. <em>arXiv preprint</em>. <a href="https://arxiv.org/abs/1802.06002">arXiv:1802.06002</a></li>
+<li id="ref-huang2021power" value="5">Huang, Hsin-Yuan, Broughton, Michael, Mohseni, Masoud, Babbush, Ryan, Boixo, Sergio, Neven, Hartmut, and McClean, Jarrod R. (2021). Power of data in quantum machine learning. <em>Nature Communications 12, 2631</em>. <a href="https://doi.org/10.1038/s41467-021-22539-9">doi:10.1038/s41467-021-22539-9</a>; <a href="https://arxiv.org/abs/2011.01938">arXiv:2011.01938</a></li>
+<li id="ref-jones2020adjoint" value="6">Jones, Tyson, and Gacon, Julien (2020). Efficient calculation of gradients in classical simulations of variational quantum algorithms. <em>arXiv preprint</em>. <a href="https://arxiv.org/abs/2009.02823">arXiv:2009.02823</a></li>
+<li id="ref-kingma2014adam" value="7">Kingma, Diederik P., and Ba, Jimmy (2014). Adam: A Method for Stochastic Optimization. <em>arXiv preprint</em>. <a href="https://arxiv.org/abs/1412.6980">arXiv:1412.6980</a></li>
+<li id="ref-lecun1998mnist" value="8">LeCun, Yann, Bottou, Léon, Bengio, Yoshua, and Haffner, Patrick (1998). Gradient-based learning applied to document recognition. <em>Proceedings of the IEEE 86, 2278–2324</em>. <a href="https://doi.org/10.1109/5.726791">doi:10.1109/5.726791</a></li>
+<li id="ref-mcclean2018barren" value="9">McClean, Jarrod R., Boixo, Sergio, Smelyanskiy, Vadim N., Babbush, Ryan, and Neven, Hartmut (2018). Barren plateaus in quantum neural network training landscapes. <em>Nature Communications 9, 4812</em>. <a href="https://doi.org/10.1038/s41467-018-07090-4">doi:10.1038/s41467-018-07090-4</a>; <a href="https://arxiv.org/abs/1803.11173">arXiv:1803.11173</a></li>
+<li id="ref-mitarai2018qcl" value="10">Mitarai, Kosuke, Negoro, Makoto, Kitagawa, Masahiro, and Fujii, Keisuke (2018). Quantum circuit learning. <em>Physical Review A 98, 032309</em>. <a href="https://doi.org/10.1103/PhysRevA.98.032309">doi:10.1103/PhysRevA.98.032309</a>; <a href="https://arxiv.org/abs/1803.00745">arXiv:1803.00745</a></li>
+<li id="ref-preskill2018nisq" value="11">Preskill, John (2018). Quantum Computing in the NISQ era and beyond. <em>Quantum 2, 79</em>. <a href="https://doi.org/10.22331/q-2018-08-06-79">doi:10.22331/q-2018-08-06-79</a>; <a href="https://arxiv.org/abs/1801.00862">arXiv:1801.00862</a></li>
+<li id="ref-schuld2019gradients" value="12">Schuld, Maria, Bergholm, Ville, Gogolin, Christian, Izaac, Josh, and Killoran, Nathan (2019). Evaluating analytic gradients on quantum hardware. <em>Physical Review A 99, 032331</em>. <a href="https://doi.org/10.1103/PhysRevA.99.032331">doi:10.1103/PhysRevA.99.032331</a>; <a href="https://arxiv.org/abs/1811.11184">arXiv:1811.11184</a></li>
+<li id="ref-wang2021noise" value="13">Wang, Samson, Fontana, Enrico, Cerezo, M., Sharma, Kunal, Sone, Akira, Cincio, Lukasz, and Coles, Patrick J. (2021). Noise-induced barren plateaus in variational quantum algorithms. <em>Nature Communications 12, 6961</em>. <a href="https://doi.org/10.1038/s41467-021-27045-6">doi:10.1038/s41467-021-27045-6</a>; <a href="https://arxiv.org/abs/2007.14384">arXiv:2007.14384</a></li></ol>
+<h2 id="cite">Cite this</h2>
+<div class="cmd"><code>@misc{mehta2026quantumtf,
+  title  = {Training Quantum Neural Networks with TensorFlow Quantum: a Small, Reproducible Study},
+  author = {Amal Mehta},
+  year   = {2026},
+  note   = {Preprint}
+}</code><button type="button" data-copy>Copy</button></div>
+</article>
+<footer class="site"><span>Amal Mehta, independent researcher</span><span>TensorFlow 2.18.1 · TensorFlow Quantum 0.7.6 · Cirq 1.5.0</span>
+<span>Built 2026-10-10 from results/*.json</span></footer>
+</main>
+<script src="assets/data.js"></script>
+<script src="assets/site.js"></script>
+
+</body>
+</html>

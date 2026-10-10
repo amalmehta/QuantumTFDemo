@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hybrid Head · Quantum TF Demo</title>
+<meta name="description" content="Experiment 2: the same circuit with a classical dense head.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+
+</head>
+<body>
+<header class="top"><div class="bar">
+  <a class="name" href="./">Quantum TF Demo</a>
+  <nav aria-label="Site"><a href="mnist.html">QNN vs classical</a><a href="hybrid.html" aria-current="page">Hybrid</a><a href="barren.html">Barren plateaus</a><a href="noise.html">Noise</a><a href="paper.html">Paper</a><a href="run.html">Run it</a><a href="about.html">About</a></nav>
+</div></header>
+<main class="frame">
+
+<header class="page-head">
+  <div class="label">Experiment 2 of 4</div>
+  <h1>Quantum readout vs a classical head</h1>
+  <p class="q">Does reading out every qubit and adding a small dense layer help the same circuit?</p>
+  <p class="lede">Yes. The same circuit with an 8-unit dense head reaches 90.6%, up 3.8 points from the single-readout QNN's 86.8%, and matches the classical network.</p>
+</header>
+<section class="block">
+  <div class="label">Results</div>
+  <div class="result"><div class="chart" data-chart="hybrid" data-seeds></div><div class="numbers" data-numbers="hybrid"></div></div>
+  <p class="prose">The hybrid model is ahead from the first epoch, and its spread across seeds is about a quarter of the QNN's (±0.6 vs ±2.3 points). Same data splits, seeds and circuit as Experiment 1.</p>
+</section>
+<section class="block"><div class="label">Method</div>
+<ol class="steps">
+<li><div><strong>Same circuit.</strong> The 17-qubit Farhi–Neven circuit with its 32 trainable angles.</div></li>
+<li><div><strong>Read out every qubit.</strong> ⟨Z⟩ on all 17 qubits instead of only the readout qubit.</div></li>
+<li><div><strong>Classical head.</strong> Those 17 values feed Dense(8, ReLU) → Dense(1, tanh): 153 classical parameters on top of the 32 quantum ones.</div></li>
+<li><div><strong>Train jointly.</strong> Same loss, optimizer, data and seeds as Experiment 1. Gradients flow through the head into the circuit.</div></li>
+</ol></section>
+<section class="block">
+  <div class="label">The code that ran it</div>
+  <figure class="code"><figcaption>quantumtf_demo/models.py · build_hybrid() · lines 66–74</figcaption><pre><code><span class="ln">66</span><span class="kw">def</span> build_hybrid(size=SIZE, lr=0.01, hidden=8):
+<span class="ln">67</span>    <span class="str">&quot;&quot;&quot;Same circuit body, but &lt;Z&gt; on every qubit feeds a small dense head.&quot;&quot;&quot;</span>
+<span class="ln">68</span>    circuit, readout, _ = qnn_circuit(size)
+<span class="ln">69</span>    ops = [cirq.Z(q) <span class="kw">for</span> q <span class="kw">in</span> data_qubits(size)] + [cirq.Z(readout)]
+<span class="ln">70</span>    inputs = keras.Input(shape=(), dtype=tf.string)
+<span class="ln">71</span>    x = tfq.layers.PQC(circuit, ops)(inputs)
+<span class="ln">72</span>    x = keras.layers.Dense(hidden, activation=<span class="str">&quot;relu&quot;</span>)(x)
+<span class="ln">73</span>    out = keras.layers.Dense(1, activation=<span class="str">&quot;tanh&quot;</span>)(x)
+<span class="ln">74</span>    <span class="kw">return</span> _compile(keras.Model(inputs, out), lr)</code></pre></figure>
+  <details class="code"><summary>Show the experiment loop shared with Experiment 1</summary>
+  <figure class="code"><figcaption>quantumtf_demo/experiments/mnist_qnn.py · run() · lines 17–37</figcaption><pre><code><span class="ln">17</span><span class="kw">def</span> run(cfg):
+<span class="ln">18</span>    runs = {k: [] <span class="kw">for</span> k <span class="kw">in</span> MODELS}
+<span class="ln">19</span>    <span class="kw">for</span> seed <span class="kw">in</span> cfg[<span class="str">&quot;seeds&quot;</span>]:
+<span class="ln">20</span>        x_tr, y_tr, x_te, y_te = data.load_binary_mnist(cfg[<span class="str">&quot;n_train&quot;</span>], cfg[<span class="str">&quot;n_test&quot;</span>], seed)
+<span class="ln">21</span>        yh_tr, yh_te = data.hinge_labels(y_tr), data.hinge_labels(y_te)
+<span class="ln">22</span>        circuits = (data.to_tensor(x_tr), data.to_tensor(x_te))
+<span class="ln">23</span>        <span class="kw">for</span> name, build <span class="kw">in</span> MODELS.items():
+<span class="ln">24</span>            xtr, xte = (x_tr, x_te) <span class="kw">if</span> name == <span class="str">&quot;classical&quot;</span> <span class="kw">else</span> circuits
+<span class="ln">25</span>            set_seed(seed)
+<span class="ln">26</span>            m = build(lr=cfg[<span class="str">&quot;lr&quot;</span>])
+<span class="ln">27</span>            r = train_eval(m, xtr, yh_tr, xte, yh_te, cfg[<span class="str">&quot;epochs&quot;</span>], cfg[<span class="str">&quot;batch_size&quot;</span>])
+<span class="ln">28</span>            runs[name].append({<span class="str">&quot;seed&quot;</span>: seed, <span class="str">&quot;params&quot;</span>: models.count_params(m), **r})
+<span class="ln">29</span>            <span class="kw">if</span> name == <span class="str">&quot;qnn&quot;</span>:
+<span class="ln">30</span>                WEIGHTS.mkdir(parents=<span class="kw">True</span>, exist_ok=<span class="kw">True</span>)
+<span class="ln">31</span>                np.save(WEIGHTS / <span class="str">f&quot;qnn_seed{seed}.npy&quot;</span>, m.get_weights()[0])
+<span class="ln">32</span>            print(<span class="str">f&quot;  seed {seed} {name:9s} acc {r[&#x27;test_acc&#x27;]:.3f}  ({r[&#x27;train_seconds&#x27;]:.0f}s)&quot;</span>,
+<span class="ln">33</span>                  flush=<span class="kw">True</span>)
+<span class="ln">34</span>
+<span class="ln">35</span>    summary = {k: summarise(v) <span class="kw">for</span> k, v <span class="kw">in</span> runs.items()}
+<span class="ln">36</span>    <span class="kw">return</span> save(<span class="str">&quot;mnist_qnn&quot;</span>, {<span class="str">&quot;config&quot;</span>: cfg, <span class="str">&quot;n_train_after_filtering&quot;</span>: int(len(x_tr)),
+<span class="ln">37</span>                              <span class="str">&quot;summary&quot;</span>: summary, <span class="str">&quot;runs&quot;</span>: runs})</code></pre></figure></details>
+</section>
+<section class="block">
+  <div class="label">Caveats</div>
+  <ul class="caveats">
+    <li>The gain can't be credited to the circuit alone: the hybrid has 185 parameters, most of them classical.</li>
+    <li>16 of the 17 readouts are on data qubits, which start in the input's basis state, so the head sees something close to the pixels.</li>
+  </ul>
+  <p><a href="paper.html#sec-res-hybrid">Read §4.2 in the paper</a></p>
+</section>
+<nav class="pager" aria-label="Experiments"><a href="mnist.html"><span>Previous</span>QNN vs classical</a><a class="next" href="barren.html"><span>Next</span>Barren plateaus</a></nav>
+<footer class="site"><span>Amal Mehta, independent researcher</span><span>TensorFlow 2.18.1 · TensorFlow Quantum 0.7.6 · Cirq 1.5.0</span>
+<span>Built 2026-10-10 from results/*.json</span></footer>
+</main>
+<script src="assets/data.js"></script>
+<script src="assets/site.js"></script>
+
+</body>
+</html>

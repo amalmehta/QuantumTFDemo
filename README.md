@@ -4,7 +4,7 @@ A reproducible TensorFlow Quantum demo: a 17-qubit quantum neural network learns
 compared with a classical network of the same size and a hybrid head, plus barren plateaus and
 training under depolarizing noise.
 
-![The project page](docs/images/site.png)
+![The website's home page](docs/images/site.png)
 
 | QNN vs classical | Quantum readout vs hybrid head |
 |---|---|
@@ -14,7 +14,7 @@ training under depolarizing noise.
 
 ## Links
 
-- [Project page](site/index.html) (open locally, or host `site/` anywhere)
+- [Website](site/public/index.html): serve it with `python3 -m http.server --directory site/public`, or host `site/public/` anywhere
 - [Paper (PDF)](paper/arxiv/main.pdf)
 - [Notebook walkthrough](notebooks/Quantum%20TF%20Demo.ipynb)
 - [Instructions: setup, run, use](docs/INSTRUCTIONS.md)

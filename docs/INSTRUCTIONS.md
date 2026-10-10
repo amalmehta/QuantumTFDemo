@@ -98,12 +98,20 @@ cd paper/arxiv && tectonic main.tex --keep-logs --keep-intermediates
 `make_all.py` writes every number (`generated/values.tex`), table (`generated/tables/`) and figure
 (`figures/*.pdf`) from `results/*.json`, plus `sources.md`, which records where each number comes from.
 
-## 5. Rebuild the site
+## 5. Rebuild the website
 
 ```bash
 python3 site/build_site.py
 ```
 
-This writes `site/index.html` with the results embedded, and copies the paper PDF next to it if it
-has been compiled. Open the file in a browser, or serve `site/` with any static host (GitHub Pages
-works as is).
+This writes eight pages to `site/public/`: home, one page per experiment, the paper as a web page,
+"Run it" and About. Charts are drawn in the browser from `assets/data.js` (all of `results/*.json`).
+The paper page is converted from `paper/arxiv/sections/*.tex` with the same `\val` numbers as the PDF,
+and code excerpts are pulled from the source by function name. Preview it with any static server:
+
+```bash
+python3 -m http.server 8000 --directory site/public
+```
+
+Then open http://localhost:8000. Links between pages use relative paths, so `site/public/` can be
+hosted anywhere as is (GitHub Pages, Netlify, S3).

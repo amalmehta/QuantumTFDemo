@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Run It · Quantum TF Demo</title>
+<meta name="description" content="How to reproduce every number in this study.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,500;0,600;1,500&family=Public+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/style.css">
+
+</head>
+<body>
+<header class="top"><div class="bar">
+  <a class="name" href="./">Quantum TF Demo</a>
+  <nav aria-label="Site"><a href="mnist.html">QNN vs classical</a><a href="hybrid.html">Hybrid</a><a href="barren.html">Barren plateaus</a><a href="noise.html">Noise</a><a href="paper.html">Paper</a><a href="run.html" aria-current="page">Run it</a><a href="about.html">About</a></nav>
+</div></header>
+<main class="frame">
+
+<header class="page-head">
+  <div class="label">Run it yourself</div>
+  <h1>Reproduce every number</h1>
+  <p class="lede">Everything runs on a laptop CPU in Docker. One command reruns all four experiments; two more rebuild the paper and this site from the new results.</p>
+</header>
+<section class="block"><div class="prose">
+  <h2>1. Build the environment</h2>
+  <p>The image uses TensorFlow Quantum 0.7.6 with TensorFlow 2.18 on Linux and works on any Mac or PC with Docker. It's about 3 GB.</p>
+  <div class="cmd"><code>docker build -t quantumtfdemo .</code><button type="button" data-copy>Copy</button></div>
+  <p class="muted">There is also a native route for Intel Macs (TFQ 0.7.2, the last macOS release). It needs a few workarounds, which are listed in <code>docs/INSTRUCTIONS.md</code>.</p>
+</div></section>
+<section class="block"><div class="prose">
+  <h2>2. Check it works</h2>
+  <p>Ten tests, about a minute:</p>
+  <div class="cmd"><code>docker run --rm -v &quot;$PWD&quot;:/work quantumtfdemo python -m pytest -q tests</code><button type="button" data-copy>Copy</button></div>
+  <p>Every experiment at tiny sizes, about ten minutes:</p>
+  <div class="cmd"><code>docker run --rm -v &quot;$PWD&quot;:/work quantumtfdemo python -m quantumtf_demo.run_all --preset quick</code><button type="button" data-copy>Copy</button></div>
+</div></section>
+<section class="block"><div class="prose">
+  <h2>3. Run the full experiments</h2>
+  <p>A few hours on an 8-core laptop. Results land in <code>results/</code>: every seed, every epoch, the configuration and the library versions.</p>
+  <div class="cmd"><code>docker run --rm -v &quot;$PWD&quot;:/work quantumtfdemo python -m quantumtf_demo.run_all --preset full</code><button type="button" data-copy>Copy</button></div>
+  <p class="muted">Run a single experiment with <code>--only mnist_qnn</code>, <code>barren_plateaus</code> or <code>noise</code>. The noise experiment reuses the weights saved by <code>mnist_qnn</code>.</p>
+</div></section>
+<section class="block"><div class="prose">
+  <h2>4. Rebuild the paper and this site</h2>
+  <div class="cmd"><code>python paper/figures_scripts/make_all.py paper/arxiv</code><button type="button" data-copy>Copy</button></div>
+  <div class="cmd"><code>cd paper/arxiv &amp;&amp; tectonic main.tex</code><button type="button" data-copy>Copy</button></div>
+  <div class="cmd"><code>python3 site/build_site.py</code><button type="button" data-copy>Copy</button></div>
+  <p class="muted">Every number in the paper is a generated macro, and <code>paper/arxiv/sources.md</code> records where each one comes from. This site reads the same results and the same macros.</p>
+</div></section>
+<section class="block">
+  <div class="label">What's in the repo</div>
+  <div class="filelist">
+    <div><code>quantumtf_demo/</code><span>Data encoding, models and the four experiments.</span></div>
+    <div><code>notebooks/Quantum TF Demo.ipynb</code><span>Guided walkthrough at small sizes, a few minutes end to end.</span></div>
+    <div><code>results/*.json</code><span>Raw results from the full runs.</span></div>
+    <div><code>paper/arxiv/</code><span>The paper's LaTeX, generated values, figures and checks.</span></div>
+    <div><code>site/</code><span>This website: sources in <code>src/</code>, output in <code>public/</code>.</span></div>
+    <div><code>docs/</code><span>Instructions, system design and file structure.</span></div>
+  </div>
+</section>
+<footer class="site"><span>Amal Mehta, independent researcher</span><span>TensorFlow 2.18.1 · TensorFlow Quantum 0.7.6 · Cirq 1.5.0</span>
+<span>Built 2026-10-10 from results/*.json</span></footer>
+</main>
+<script src="assets/data.js"></script>
+<script src="assets/site.js"></script>
+
+</body>
+</html>

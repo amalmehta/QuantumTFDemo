@@ -103,3 +103,4 @@ CHANGELOG:
 - 2026-10-05 — filled in OPEN QUESTIONS / ASSUMPTIONS after the setup questions
 - 2026-10-06 — added deliverable: project site (site/), requested by the user
 - 2026-10-06 — final full runs done; paper compiled and checked; site republished with full results
+- 2026-10-10 — website expanded to 8 pages in site/public/ (experiments, paper on the web, run guide, about)

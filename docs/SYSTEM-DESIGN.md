@@ -24,8 +24,10 @@ flowchart LR
   PS --> TEX["paper/arxiv/generated/ · figures/*.pdf · sources.md"]
   TEX --> PDF["tectonic → main.pdf"]
   R --> SITE["site/build_site.py"]
+  TEX --> SITE
   PDF --> SITE
-  SITE --> HTML["site/index.html"]
+  SRC["quantumtf_demo/*.py<br/>code excerpts"] --> SITE
+  SITE --> HTML["site/public/<br/>8 pages + assets"]
   NB["notebook"] --> exp
 ```
 
@@ -44,7 +46,7 @@ flowchart LR
 | `run_all.py` | CLI and presets. `quick` checks the pipeline in minutes; `full` produces the paper's numbers. |
 | `figures.py` | `plot_*` functions taking a results dict and a figure size. The README PNGs and the paper PDFs call the same functions. |
 | `paper/figures_scripts/` | Paper build: `make_values.py` writes `\val…` macros, booktabs tables and `sources.md`. One script per figure calls `figures.plot_*` at the paper's exact width. |
-| `site/build_site.py` | Injects all results JSON into `site/template.html`. The page draws its charts in SVG from that data, so they follow light and dark mode. |
+| `site/build_site.py` | Builds the eight-page website in `site/public/`. Results go to `assets/data.js`, and `src/site.js` draws every chart in SVG from them (theme-aware, hover values, a per-seed toggle). Prose numbers come from the results or from the paper's `values.tex`. `paper.html` is converted from the LaTeX sections, with section, figure and table numbers matching the PDF, citations numbered as in plainnat, and math rendered by MathJax (SVG output, no external fonts). Code excerpts are pulled from the source with `ast`, using real line numbers. |
 
 ## Main flows
 
@@ -54,8 +56,8 @@ flowchart LR
 2. **Paper build.** `make_all.py` → `make_values.py` + figure scripts → `tectonic main.tex`. No number
    is typed into the prose: `check_paper.py --regenerate` re-runs the scripts and fails if any
    output changes.
-3. **Site build.** `build_site.py` → `site/index.html` (a full document) and, with `--fragment`, a
-   body-only copy for hosts that add their own `<head>`.
+3. **Site build.** `build_site.py` → `site/public/` (full HTML documents) and, with `--fragment`, a
+   body-only copy of the home page for hosts that add their own `<head>` (the private claude.ai page).
 
 ## Where data lives
 
@@ -87,7 +89,13 @@ flowchart LR
 - **Hyperparameters** (batch 32 / learning rate 0.01 at 4×4; batch 16 / 0.02 for the 3×3 noise
   training) were picked from a two-setting sweep on seed 0 (`.cache/tune.py`, not committed). That
   is light tuning, and the paper says so.
-- **Every number traceable.** Results JSON → macros → `sources.md`. The site reads the same JSON.
+- **Every number traceable.** Results JSON → macros → `sources.md`. The site reads the same JSON and the same macros.
+- **The website is static, with a small hand-written LaTeX converter.** No Pandoc or site generator
+  is needed, just the standard library. *Trade-off:* it only handles the LaTeX subset the paper uses, so new
+  constructs (e.g. `\begin{equation}`) need a converter rule.
+- **Home links use `./`, not `index.html`,** because the claude.ai host serves the home page at its
+  root. *Trade-off:* opening `site/public/index.html` straight from disk makes "Home" show the folder,
+  so serve the folder over HTTP instead.
 
 ## Testing
 
@@ -98,7 +106,9 @@ flowchart LR
 - Tested on both TFQ 0.7.2 (native) and 0.7.6 (Docker).
 - `--preset quick` is the end-to-end smoke test: every experiment, figure and value path.
 - Notebook: executed end to end with `jupyter nbconvert --execute` in Docker.
-- Site: rendered in a browser, with no console errors and no horizontal overflow; charts checked against the JSON.
+- Site: every page loaded in a browser over HTTP and checked for console errors, horizontal overflow,
+  undrawn charts, MathJax errors (76 expressions, none failed) and broken in-page anchors. The seed
+  toggle was checked by DOM count.
 - Paper: `check_paper.py` (LaTeX errors, undefined references, sourced numbers, figure scripts,
   regeneration, citations checked against arXiv and Crossref).
 

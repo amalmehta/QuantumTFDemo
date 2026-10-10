@@ -43,10 +43,11 @@ demo_with_quantumtf/
 │       ├── outline.md, venue_report.md, checks.md
 │       └── main.pdf              # compiled paper
 │
-├── site/
-│   ├── template.html             # the project page; results are injected at build time
-│   ├── build_site.py             # template + results/*.json → index.html (+ paper.pdf)
-│   └── index.html                # built page; open it or host site/ statically
+├── site/                         # the website
+│   ├── build_site.py             # results + paper sources + code → public/ (8 pages)
+│   ├── src/style.css, src/site.js    # shared styles; charts, circuit, seed toggles, copy buttons
+│   └── public/                   # built site: index, mnist, hybrid, barren, noise, paper, run,
+│                                 #   about .html + assets/ (style, site.js, data.js) + paper.pdf
 │
 └── docs/
     ├── INSTRUCTIONS.md           # setup, run, use
