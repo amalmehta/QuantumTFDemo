@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Quantum TF Demo: a Bloch sphere with a qubit's state vector -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FAF5FB"/>
+      <stop offset="1" stop-color="#E7DCEF"/>
+    </linearGradient>
+    <radialGradient id="sphere" cx="0.38" cy="0.32" r="0.8">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#EDE6F3"/>
+    </radialGradient>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)"/>
+  <circle cx="512" cy="512" r="262" fill="url(#sphere)"/>
+  <!-- equator: back half dashed, front half solid -->
+  <path d="M250 512 A262 84 0 0 1 774 512" fill="none" stroke="#A99BBE" stroke-width="12" stroke-dasharray="26 22"/>
+  <path d="M250 512 A262 84 0 0 0 774 512" fill="none" stroke="#6E6390" stroke-width="16"/>
+  <circle cx="512" cy="512" r="262" fill="none" stroke="#4B4170" stroke-width="24"/>
+  <!-- state vector -->
+  <line x1="512" y1="512" x2="660" y2="330" stroke="#0B63B0" stroke-width="28" stroke-linecap="round"/>
+  <circle cx="512" cy="512" r="20" fill="#4B4170"/>
+  <circle cx="666" cy="322" r="40" fill="#0B63B0"/>
+</svg>

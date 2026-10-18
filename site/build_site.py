@@ -373,6 +373,9 @@ def head(title, description, extra=""):
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="{FONTS}">
 <link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 {extra}"""
 
 
@@ -787,6 +790,8 @@ def main():
     (OUT / "assets").mkdir(parents=True)
     shutil.copyfile(SRC / "style.css", OUT / "assets" / "style.css")
     shutil.copyfile(SRC / "site.js", OUT / "assets" / "site.js")
+    for icon in ("favicon.svg", "favicon.ico", "apple-touch-icon.png"):
+        shutil.copyfile(SRC / icon, OUT / icon)
     payload = json.dumps(data, separators=(",", ":")).replace("</", "<\\/")
     (OUT / "assets" / "data.js").write_text(f"window.QTF_DATA={payload};\n")
     pdf = PAPER / "main.pdf"
